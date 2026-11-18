@@ -13,6 +13,8 @@ static const unsigned char PROGMEM image_paint_16_bits[] = {0x01, 0xf8, 0x00, 0x
 
 const char* ssid_name = SSID_NAME;
 const char* ssid_password = SSID_PASSWD;
+const String hackatime_api = HACKATIME_API;
+const String hackatime_id = HACKATIME_ID;
 
 void drawScreen(void) {
   display.clearDisplay();
@@ -60,6 +62,7 @@ void drawScreen(void) {
 void setup() {
   Serial.begin(115200);
   display.begin(0x3C, true);
+  display.clearDisplay();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid_name, ssid_password);
@@ -70,7 +73,7 @@ void setup() {
   }
   Serial.println("connected!!");
   drawScreen();
-  time();
+  code_time();
 }
 
 void loop() {
@@ -88,7 +91,7 @@ void time() {
 
     int httpResponseCode = http.GET();
 
-    if(httpResponseCode > 0) {
+    if(httpResponseCode == 200) {
       String payload = http.getString();
 
       JsonDocument doc;
@@ -102,7 +105,25 @@ void time() {
 }
 
 void code_time() {
+  if(WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = "https://hackatime.hackclub.com/api/hackatime/v1/users/" + hackatime_id + "/statusbar/today";
+    http.begin(url);
+    http.addHeader("Authorization", "Bearer " + hackatime_api);
 
+    int httpResponseCode = http.GET();
+
+    if(httpResponseCode == 200) {
+      String payload = http.getString();
+
+      JsonDocument doc;
+      deserializeJson(doc, payload);
+
+      int hackatime_total_seconds = doc["data"]["grand_total"]["total_seconds"];
+      int total_minutes = (hackatime_total_seconds % 3600) / 60;
+      int total_hours = hackatime_total_seconds / 3600;
+    }
+  }
 }
 
 void new_year_finder() {
