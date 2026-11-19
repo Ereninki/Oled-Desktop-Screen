@@ -75,7 +75,6 @@ void setup() {
   }
   Serial.println("connected!!");
   drawScreen();
-  new_year_finder();
 }
 
 void loop() {
@@ -130,8 +129,6 @@ void new_year_finder() {
     HTTPClient http;
     String url = "https://time-api.ereninki.hackclub.app/api/v1/time?timezone=" + timezone + "&api_key=" + time_api_key;
     http.begin(url);
-
-    int days_until_jan;
     int httpResponseCode = http.GET();
     
     if(httpResponseCode == 200) {
@@ -140,15 +137,27 @@ void new_year_finder() {
       JsonDocument doc;
       deserializeJson(doc, payload);
       int day_of_the_year = doc["day_of_the_year"];
-      if (day_of_the_year == 1) {
-        days_until_jan = 0;
-      } else {
-        days_until_jan = 366 - day_of_the_year;
-      }
     }
   }
 }
 
 void date() {
+  if(WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = "https://time-api.ereninki.hackclub.app/api/v1/date?timezone=" + timezone + "&api_key" + time_api_key;
+    http.begin(url);
 
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode == 200) {
+      String payload = http.getString();
+
+      JsonDocument doc;
+      deserializeJson(doc, payload);
+      String month = doc["month"];
+      String day = doc["day"];
+      String year = doc["year"];
+
+    }
+  }
 }
