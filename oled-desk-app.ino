@@ -15,6 +15,8 @@ const char* ssid_name = SSID_NAME;
 const char* ssid_password = SSID_PASSWD;
 const String hackatime_api = HACKATIME_API;
 const String hackatime_id = HACKATIME_ID;
+const String time_api_key = TIME_API_KEY;
+const String timezone = "Europe/Istanbul";
 
 void drawScreen(void) {
   display.clearDisplay();
@@ -73,7 +75,7 @@ void setup() {
   }
   Serial.println("connected!!");
   drawScreen();
-  code_time();
+  new_year_finder();
 }
 
 void loop() {
@@ -81,12 +83,10 @@ void loop() {
 }
 
 void time() {
-  const String timezone = "Asia/Istanbul";
-
   if(WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
-    String url = "https://timeapi.io/api/v1/timezone/zone?timeZone=" + timezone;
+    String url = "https://time-api.ereninki.hackclub.app/api/v1/time?timezone=" + timezone + "&api_key=" + time_api_key;
     http.begin(url);
 
     int httpResponseCode = http.GET();
@@ -97,9 +97,8 @@ void time() {
       JsonDocument doc;
       deserializeJson(doc, payload);
 
-      String local_time = doc["local_time"];
-      int pos_t = local_time.indexOf('T');
-      String time = local_time.substring(pos_t+1, pos_t+6);
+      String hour = doc["hour"];
+      String minute  = doc["minute"];
     }
   }
 }
@@ -127,7 +126,27 @@ void code_time() {
 }
 
 void new_year_finder() {
+  if(WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = "https://time-api.ereninki.hackclub.app/api/v1/time?timezone=" + timezone + "&api_key=" + time_api_key;
+    http.begin(url);
 
+    int days_until_jan;
+    int httpResponseCode = http.GET();
+    
+    if(httpResponseCode == 200) {
+      String payload = http.getString();
+
+      JsonDocument doc;
+      deserializeJson(doc, payload);
+      int day_of_the_year = doc["day_of_the_year"];
+      if (day_of_the_year == 1) {
+        days_until_jan = 0;
+      } else {
+        days_until_jan = 366 - day_of_the_year;
+      }
+    }
+  }
 }
 
 void date() {
