@@ -17,21 +17,14 @@ const char* ssid_password = SSID_PASSWD;
 const String hackatime_api = HACKATIME_API;
 const String time_api_key = TIME_API_KEY;
 const String timezone = "Europe/Istanbul";
+String time_minute;
 
-struct oneinfotmation {
-  int id;
-  char information;
-}
-
-struct sumoftheinformations {
-  char time_hour;
-  char until_jan_1;
-  char the_date;
-  char daily_coding_time;
-}
-
-QueueHandle_t betweenapis;
-QueueHandle_t betweencores;
+struct Sumoftheinformations {
+  String time_hour;
+  String until_jan_1;
+  String the_date;
+  String daily_coding_time;
+};
 
 void drawScreen(void) {
   display.clearDisplay();
@@ -96,27 +89,43 @@ void loop() {
 
 }
 
-void get_all_the_informations() {
-  if(WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = "oled-desk-api.ereninki.hackclub.app/get-the-informations?api_key=" + time_api_key + "&hackatime_api=" + hackatime_api + "&timezone=" + timezone;
-    http.begin(url);
+void get_all_the_informations(void *pvParameters) {
+  for(;;) {
+    if(WiFi.status() == WL_CONNECTED) {
+      Sumoftheinformations the_big_sum;
+      WiFiClientSecure client;
+      client.setInsecure();
+      HTTPClient http;
+      String url = "https://oled-desk-api.ereninki.hackclub.app/get-the-informations?api_key=" + time_api_key + "&hackatime_api=" + hackatime_api + "&timezone=" + timezone;
+      http.begin(client, url);
 
-    int httpResponseCode = http.GET();
+      int httpResponseCode = http.GET();
 
-    if(httpResponseCode == 200) {
-      String payload = http.getString();
+      if(httpResponseCode == 200) {
+        String payload = http.getString();
 
-      JsonDocument dpc;
-      deserializeJson(doc, payload);
-      String hackatime_hours = doc["hackatime hours"];
-      String hackatime_minutes = doc["hackatime minutes"];
-      String hour = doc["hour"];
-      String minute = doc["minute"];
-      String month = doc["month"];
-      String year = doc["year"];
-      String day = doc["day"];
-      String until_january = doc["until january"];
+        JsonDocument doc;
+        deserializeJson(doc, payload);
+        String hackatime_hours = doc["hackatime hours"];
+        String hackatime_minutes = doc["hackatime minutes"];
+        String hour = doc["hour"];
+        String minute = doc["minute"];
+        String month = doc["month"];
+        String year = doc["year"];
+        String day = doc["day"];
+        String until_january = doc["until january"];
+        
+        String date = day + "-" + month + "-" + year;
+        if (minute.toInt() < 10) {
+          time_minute = hour + ":" + "0" + minute;
+        } else {
+          time_minute = hour + ":" + minute;
+        }
+        String coding_time = hackatime_hours + "H " + hackatime_minutes + "M";
+        Serial.println(date + " " + time_minute + " " + coding_time);
+      }
+      http.end();
     }
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
