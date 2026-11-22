@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "Secrets.h"
+#include <WiFiClientSecure.h>
 
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &Wire);
 static const unsigned char PROGMEM image_paint_13_bits[] = {0x01, 0xff, 0xc0, 0x00, 0x1e, 0x00, 0x3c, 0x00, 0x30, 0x00, 0x06, 0x00, 0x60, 0x00, 0x03, 0x00, 0xc0, 0x00, 0x01, 0x00, 0x80, 0x00, 0x01, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x01, 0x80, 0xc0, 0x00, 0x01, 0x00, 0x40, 0x00, 0x03, 0x00, 0x40, 0x00, 0x06, 0x00, 0x20, 0x00, 0x1c, 0x00, 0x3f, 0xff, 0xf0, 0x00};
@@ -14,9 +15,23 @@ static const unsigned char PROGMEM image_paint_16_bits[] = {0x01, 0xf8, 0x00, 0x
 const char* ssid_name = SSID_NAME;
 const char* ssid_password = SSID_PASSWD;
 const String hackatime_api = HACKATIME_API;
-const String hackatime_id = HACKATIME_ID;
 const String time_api_key = TIME_API_KEY;
 const String timezone = "Europe/Istanbul";
+
+struct oneinfotmation {
+  int id;
+  char information;
+}
+
+struct sumoftheinformations {
+  char time_hour;
+  char until_jan_1;
+  char the_date;
+  char daily_coding_time;
+}
+
+QueueHandle_t betweenapis;
+QueueHandle_t betweencores;
 
 void drawScreen(void) {
   display.clearDisplay();
@@ -81,11 +96,10 @@ void loop() {
 
 }
 
-void time() {
+void get_all_the_informations() {
   if(WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-
-    String url = "https://time-api.ereninki.hackclub.app/api/v1/time?timezone=" + timezone + "&api_key=" + time_api_key;
+    String url = "oled-desk-api.ereninki.hackclub.app/get-the-informations?api_key=" + time_api_key + "&hackatime_api=" + hackatime_api + "&timezone=" + timezone;
     http.begin(url);
 
     int httpResponseCode = http.GET();
@@ -93,71 +107,16 @@ void time() {
     if(httpResponseCode == 200) {
       String payload = http.getString();
 
-      JsonDocument doc;
+      JsonDocument dpc;
       deserializeJson(doc, payload);
-
+      String hackatime_hours = doc["hackatime hours"];
+      String hackatime_minutes = doc["hackatime minutes"];
       String hour = doc["hour"];
-      String minute  = doc["minute"];
-    }
-  }
-}
-
-void code_time() {
-  if(WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = "https://hackatime.hackclub.com/api/hackatime/v1/users/" + hackatime_id + "/statusbar/today";
-    http.begin(url);
-    http.addHeader("Authorization", "Bearer " + hackatime_api);
-
-    int httpResponseCode = http.GET();
-
-    if(httpResponseCode == 200) {
-      String payload = http.getString();
-
-      JsonDocument doc;
-      deserializeJson(doc, payload);
-
-      int hackatime_total_seconds = doc["data"]["grand_total"]["total_seconds"];
-      int total_minutes = (hackatime_total_seconds % 3600) / 60;
-      int total_hours = hackatime_total_seconds / 3600;
-    }
-  }
-}
-
-void new_year_finder() {
-  if(WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = "https://time-api.ereninki.hackclub.app/api/v1/time?timezone=" + timezone + "&api_key=" + time_api_key;
-    http.begin(url);
-    int httpResponseCode = http.GET();
-    
-    if(httpResponseCode == 200) {
-      String payload = http.getString();
-
-      JsonDocument doc;
-      deserializeJson(doc, payload);
-      int day_of_the_year = doc["day_of_the_year"];
-    }
-  }
-}
-
-void date() {
-  if(WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = "https://time-api.ereninki.hackclub.app/api/v1/date?timezone=" + timezone + "&api_key" + time_api_key;
-    http.begin(url);
-
-    int httpResponseCode = http.GET();
-
-    if (httpResponseCode == 200) {
-      String payload = http.getString();
-
-      JsonDocument doc;
-      deserializeJson(doc, payload);
+      String minute = doc["minute"];
       String month = doc["month"];
-      String day = doc["day"];
       String year = doc["year"];
-
+      String day = doc["day"];
+      String until_january = doc["until january"];
     }
   }
 }
