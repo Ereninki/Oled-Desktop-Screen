@@ -1,6 +1,6 @@
 # Oled Desk App
 
-This is an firmware for esp32 that has shows you the time, your daily hackatime time, the date and how many days left until january 1!!
+This is an firmware for esp32 that has shows you the time, your daily hackatime time, the date and how many days left until january 1 on an oled screen!!
 
 its using an api that made by me called [Oled Desk API](https://github.com/Ereninki/Oled-Desk-API)!!
 
