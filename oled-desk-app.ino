@@ -20,13 +20,15 @@ const String timezone = "Europe/Istanbul";
 String time_minute;
 
 struct Sumoftheinformations {
-  String time_hour;
-  String until_jan_1;
-  String the_date;
-  String daily_coding_time;
+  char time_hour[8];
+  char until_jan_1[8];
+  char the_date[16];
+  char daily_coding_time[16];
 };
 
-void drawScreen(void) {
+QueueHandle_t betweenscreen
+
+void drawScreen(String time, String until_jan, String code_time, String date) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
@@ -82,7 +84,16 @@ void setup() {
     Serial.println("connecting..");
   }
   Serial.println("connected!!");
-  drawScreen();
+
+  xTaskCreatePinnedToCore(
+    get_all_the_informations,
+    "API",
+    10240,
+    NULL,
+    1,
+    NULL,
+    0
+  );
 }
 
 void loop() {
@@ -122,7 +133,14 @@ void get_all_the_informations(void *pvParameters) {
           time_minute = hour + ":" + minute;
         }
         String coding_time = hackatime_hours + "H " + hackatime_minutes + "M";
-        Serial.println(date + " " + time_minute + " " + coding_time);
+        String til_january = String(365 - until_january.toInt())
+
+      date.toCharArray(the_big_sum.the_date, sizeof(the_big_sum.the_date));
+      time_minute.toCharArray(the_big_sum.time_hour, sizeof(the_big_sum.time_hour));
+      coding_time.toCharArray(the_big_sum.daily_coding_time, sizeof(the_big_sum.daily_coding_time));
+      till_january.toCharArray(the_big_sum.until_jan_1, sizeof(the_big_sum.until_jan_1));
+
+      xQueueOverwrite(betweenscreen, &the_big_sum);
       }
       http.end();
     }
