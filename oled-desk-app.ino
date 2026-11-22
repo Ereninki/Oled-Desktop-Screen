@@ -18,37 +18,41 @@ const String hackatime_api = HACKATIME_API;
 const String time_api_key = TIME_API_KEY;
 const String timezone = "Europe/Istanbul";
 String time_minute;
+int januar_lenght;
 
 struct Sumoftheinformations {
   char time_hour[8];
   char until_jan_1[8];
   char the_date[16];
   char daily_coding_time[16];
+  int jan_length;
 };
 
-QueueHandle_t betweenscreen
+QueueHandle_t betweenscreen;
 
-void drawScreen(String time, String until_jan, String code_time, String date) {
+void drawScreen(String time, String until_jan, String code_time, String date, int january_width) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SH110X_WHITE);
   display.setTextWrap(false);
 
   display.setCursor(5, 5);
-  display.print(F("Time: 05:13"));
+  display.print(F("Time: "));
+  display.print(time);
 
   display.drawRect(3,3,70,11, SH110X_WHITE);
   
   display.setCursor(5, 21);
-  display.print(F("11 Days until Jan 1"));
+  display.print(until_jan);
+  display.print(F(" Days until Jan 1"));
 
-  display.drawRect(3,19,116,11, SH110X_WHITE);
+  display.drawRect(3,19,january_width,11, SH110X_WHITE);
 
   display.setCursor(3, 40);
   display.print(F("Today Coded:"));
 
   display.setCursor(21, 53);
-  display.print(F("8H 36M"));
+  display.print(code_time);
 
   display.drawRect(1,36,73,27, SH110X_WHITE);
 
@@ -56,7 +60,7 @@ void drawScreen(String time, String until_jan, String code_time, String date) {
   display.print(F("Date:"));
 
   display.setCursor(78,51);
-  display.print(F("03/08/26"));
+  display.print(date);
   display.drawRect(76,37,51,25, SH110X_WHITE);
 
   display.setCursor(106,6);
@@ -75,6 +79,10 @@ void setup() {
   Serial.begin(115200);
   display.begin(0x3C, true);
   display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(3, 25);
+  display.print(F("Connecting to Wifi.."));
+  display.display();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid_name, ssid_password);
@@ -83,7 +91,15 @@ void setup() {
     delay(500);
     Serial.println("connecting..");
   }
+  display.clearDisplay();
+  display.setCursor(20, 25);
+  display.print(F("Connected!!!"));
+  display.display();
+
   Serial.println("connected!!");
+  delay(250);
+
+  betweenscreen = xQueueCreate(1, sizeof(Sumoftheinformations));
 
   xTaskCreatePinnedToCore(
     get_all_the_informations,
@@ -96,8 +112,12 @@ void setup() {
   );
 }
 
-void loop() {
+Sumoftheinformations the_datas;
 
+void loop() {
+  if(xQueueReceive(betweenscreen, &the_datas, portMAX_DELAY) == pdTRUE) {
+    drawScreen(the_datas.time_hour, the_datas.until_jan_1, the_datas.daily_coding_time, the_datas.the_date, the_datas.jan_length);
+  }
 }
 
 void get_all_the_informations(void *pvParameters) {
@@ -132,18 +152,24 @@ void get_all_the_informations(void *pvParameters) {
         } else {
           time_minute = hour + ":" + minute;
         }
+      
+        if(until_january.toInt() < 100) {
+          januar_lenght = 116;
+        } else {
+          januar_lenght = 125;
+        }
+
         String coding_time = hackatime_hours + "H " + hackatime_minutes + "M";
-        String til_january = String(365 - until_january.toInt())
+        date.toCharArray(the_big_sum.the_date, sizeof(the_big_sum.the_date));
+        time_minute.toCharArray(the_big_sum.time_hour, sizeof(the_big_sum.time_hour));
+        coding_time.toCharArray(the_big_sum.daily_coding_time, sizeof(the_big_sum.daily_coding_time));
+        until_january.toCharArray(the_big_sum.until_jan_1, sizeof(the_big_sum.until_jan_1));
+        the_big_sum.jan_length = januar_lenght;
 
-      date.toCharArray(the_big_sum.the_date, sizeof(the_big_sum.the_date));
-      time_minute.toCharArray(the_big_sum.time_hour, sizeof(the_big_sum.time_hour));
-      coding_time.toCharArray(the_big_sum.daily_coding_time, sizeof(the_big_sum.daily_coding_time));
-      till_january.toCharArray(the_big_sum.until_jan_1, sizeof(the_big_sum.until_jan_1));
-
-      xQueueOverwrite(betweenscreen, &the_big_sum);
+        xQueueOverwrite(betweenscreen, &the_big_sum);
       }
       http.end();
     }
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
